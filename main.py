@@ -1,15 +1,21 @@
-from typing import Union
-
 from fastapi import FastAPI
+from channel import rm_client
+from config import config
+import pickle
 
 app = FastAPI()
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+# define your object detection API endpoint
+@app.post("/object_in_image")
+async def detect_objects(image_url):
+    message = {
+        "type": "image",
+        "url": image_url,
+        "output_location": config.output_location,
+    }
+    rm_client.basic_publish(
+        exchange=config.exchange,
+        routing_key=config.queue_name,
+        body=pickle.dumps(message),
+    )
